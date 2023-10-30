@@ -1,36 +1,59 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import styles from "./Joinus.module.css";
-
+import { toast, ToastContainer } from "react-toastify";
+import { FiUpload } from "react-icons/fi";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 const Joinus = () => {
+  const fileInputRef = useRef(null);
+  const documentFileInputRef = useRef();
   const [formData, setFormData] = useState({
     name: "",
     age: "",
     gender: "",
+    email_address: "",
+    phone_number: "",
     address: "",
-    email: "",
+    pincode: "",
     city: "",
-    contact: "",
     state: "",
     country: "",
     profession: "",
     message: "",
-    file1: null,
-    file2: null,
-    agreedToTerms: false,
+    photograph: null,
+    document: null,
   });
-  const handleCheckboxChange = (event) => {
-    setFormData({
-      ...formData,
-      agreedToTerms: event.target.checked, });
+  
+  const handleFileChange = (event, name) => {
+    const file = event.target.files[0];
+    if(file){
+    const fileType = file.type;
+    const photographAllowedTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+    const documentAllowedTypes = ["application/pdf"];
+  
+    if (name === "photograph" && photographAllowedTypes.includes(fileType)) {
+      setFormData({
+        ...formData,
+        photograph: file,
+      });
+    } else if (name === "document" && documentAllowedTypes.includes(fileType)) {
+      setFormData({
+        ...formData,
+        document: file,
+      });
+    } else {
+      toast.error(
+        name === "photograph"
+          ? "Please upload a .jpg, .jpeg, .png, or .pdf file!"
+          : "Please upload a .pdf file!",
+        {
+          position: toast.POSITION.BOTTOM_RIGHT,
+        }
+      );
+    }
+  }
   };
-  const handleFileChange = (event) => {
-    const file = event.target.files[0]; 
-    const name=event.target.name;
-    setFormData({
-      ...formData,
-      [name]: file,
-    });
-  };
+  
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData({
@@ -38,34 +61,45 @@ const Joinus = () => {
       [name]: value,
     });
   };
-  const handleSubmit = async(event) => {
-    event.preventDefault();
-    if (!formData.agreedToTerms) {
-      alert('Please agree to the terms and conditions before submitting.'); // Display an alert if not agreed
-      return;
-    }
-    try {
-            const response = await fetch('/user-forms/join-us', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        body: JSON.stringify(formData),
-      });
-      if(response.ok){
-        console.log("working fine");
-      }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    }
-    
+  const handleUploadClick = () => {
+    fileInputRef.current.click();
   };
+  const handleDocumentFileSelect = () => {
+    documentFileInputRef.current.click();
+  };
+  const handleSubmit = async (e) => {
+    console.log(formData);
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        "http://backend.healthumbrella.org:8000/user-forms/join-us",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      toast.success("Information successfully submitted!", {
+        position: toast.POSITION.TOP_RIGHT,
+      });
+      console.log("Response from backend:", response.data);
+    } catch (error) {
+      toast.error("Error !", {
+        position: toast.POSITION.TOP_RIGHT,
+      });
+    }
+  };
+
   return (
     <div className={styles.join_us}>
       <div className={styles.join_us_content}>
-      <img src="./images/green-ring.png" alt="green-ring" className={styles.upper_green_ring}></img>
-      <img src="./images/green-ring-reverse.png" alt="green-ring" className={styles.lower_green_ring}></img>
         <div className={styles.join_text}>
+          <img
+            src="./images/green-ring.png"
+            alt="green-ring"
+            className={styles.upper_green_ring}
+          ></img>
           <div className={styles.join_heading}>
             Join this Movement as a member..
           </div>
@@ -97,7 +131,7 @@ const Joinus = () => {
                 placeholder="Name*"
               ></input>
               <input
-              required
+                required
                 onChange={handleInputChange}
                 type="number"
                 name="age"
@@ -106,7 +140,7 @@ const Joinus = () => {
                 placeholder="Age*"
               ></input>
               <input
-              required
+                required
                 onChange={handleInputChange}
                 name="gender"
                 value={formData.gender}
@@ -116,7 +150,8 @@ const Joinus = () => {
             </div>
             <div className={styles.second_row}>
               <input
-              required
+                required
+                type="text"
                 onChange={handleInputChange}
                 name="address"
                 value={formData.address}
@@ -124,17 +159,19 @@ const Joinus = () => {
                 placeholder="House no/Street/Landmark*"
               ></input>
               <input
-              required
+                required
+                type="email"
                 onChange={handleInputChange}
-                name="email"
-                value={formData.email}
+                name="email_address"
+                value={formData.email_address}
                 className={`${styles.form_inputs} ${styles.form}`}
                 placeholder="Email*"
               ></input>
             </div>
             <div className={styles.third_row}>
               <input
-              required
+                type="text"
+                required
                 onChange={handleInputChange}
                 name="city"
                 value={formData.city}
@@ -142,17 +179,19 @@ const Joinus = () => {
                 placeholder="City*"
               ></input>
               <input
-              required
+                required
                 onChange={handleInputChange}
-                name="contact"
-                value={formData.contact}
+                name="phone_number"
+                type="tel"
+                value={formData.phone_number}
                 className={`${styles.form_inputs} ${styles.form}`}
                 placeholder="Phone no*"
               ></input>
             </div>
             <div className={styles.fourth_row}>
               <input
-              required
+                required
+                type="text"
                 onChange={handleInputChange}
                 name="state"
                 value={formData.state}
@@ -160,7 +199,8 @@ const Joinus = () => {
                 placeholder="State*"
               ></input>
               <input
-              required
+                required
+                type="text"
                 onChange={handleInputChange}
                 name="country"
                 value={formData.country}
@@ -170,15 +210,26 @@ const Joinus = () => {
             </div>
             <div className={styles.fifth_row}>
               <input
-              required
+                required
+                type="text"
                 onChange={handleInputChange}
                 name="profession"
                 value={formData.profession}
                 className={`${styles.form_inputs} ${styles.form}`}
                 placeholder="Profession*"
               ></input>
+              <input
+                required
+                type="number"
+                onChange={handleInputChange}
+                name="pincode"
+                value={formData.pincode}
+                className={`${styles.form_inputs} ${styles.form}`}
+                placeholder="Pin Code*"
+              ></input>
             </div>
             <textarea
+              type="text"
               onChange={handleInputChange}
               name="message"
               value={formData.message}
@@ -188,31 +239,50 @@ const Joinus = () => {
               placeholder="Message"
             ></textarea>
             <div className={`${styles.upload_file}`}>
-              <label htmlFor="myfile">Recent Photograph :</label>
-              <input className={styles.photo_upload}
-              name="file1"
-              onChange={handleFileChange}
-                accept=".jpg, .jpeg, .png, .pdf"
+              <div className={styles.upload_photo}>Recent Photograph :</div>
+              <label
+                onClick={handleUploadClick}
+                className={styles.upload}
+          
+              >
+                <FiUpload size={18} color="#000000" /> Upload
+              </label>
+              <input
+                required
+                accept=".jpg, .jpeg, .png"
+                name="photograph"
+                onChange={(e) => handleFileChange(e, "photograph")}
                 type="file"
+                id="photo"
+                hidden
+                ref={fileInputRef}
               ></input>
             </div>
             <div className={styles.upload_file}>
-              <label htmlFor="myfile">
+              <div style={{ marginRight: "2rem" }}>
                 Document(Aadhar/PAN/Govt. ID Proof) :
+              </div>
+              <label
+                onClick={handleDocumentFileSelect}
+                className={styles.upload}
+              >
+                <FiUpload size={18} color="#000000" />
+                Upload
               </label>
               <input
-              name="file2"
-              onChange={handleFileChange}
+                required
+                ref={documentFileInputRef}
                 accept=".pdf"
+                 hidden
+                name="document"
+                onChange={(e) => handleFileChange(e, "document")}
                 type="file"
-                id="myfile"
+                id="docu"
                 style={{ marginLeft: "0.5%" }}
               ></input>
             </div>
             <div className={styles.terms}>
               <input
-            checked={formData.agreedToTerms}
-            onChange={handleCheckboxChange}
                 required
                 type="checkbox"
                 style={{ marginBottom: "1.5rem", marginRight: "0.5rem" }}
@@ -235,7 +305,13 @@ const Joinus = () => {
               the data. Later a member may become a state representative or
               country representative if he /she really proves worthy.
             </div>
+            <ToastContainer />
           </form>
+          <img
+            src="./images/green-ring-reverse.png"
+            alt="green-ring"
+            className={styles.lower_green_ring}
+          ></img>
         </div>
       </div>
     </div>
